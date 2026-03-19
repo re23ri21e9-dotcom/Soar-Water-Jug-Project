@@ -1,0 +1,240 @@
+sp {water-jug*propose*initialize-water
+   (state <s> ^superstate nil
+	      -^name)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name my-water)
+}
+
+sp {water-jug*apply*initialize-water
+   (state <s> ^operator.name my-water)
+-->
+   (<s> ^name water-pro
+              ^jug <x>
+	      ^jug <y>
+	      ^jug <z>)
+   (<x> ^contents 0
+	^volume 5)
+   (<y> ^contents 0
+	^volume 4)
+   (<z> ^contents 0
+	^volume 3)
+}
+
+#空き容量の計算
+sp {water-jug*elaborate*empty-cal
+   (state <s> ^name water-pro
+              ^jug <x>)
+   (<x> ^contents <xc>
+	^volume <xv>)
+-->
+   (<x> ^empty (- <xv> <xc>))
+}
+sp {water-jug*propose*empty-water
+   (state <s> ^name water-pro
+	      ^jug <x>)
+   (<x> ^contents > 0)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name empty-water
+        ^empty-jug <x>)
+}
+
+sp {water-jug*apply*empty-water
+   (state <s> ^name water-pro
+	      ^jug <x>
+	      ^operator <o>)
+   (<o> ^name empty-water
+	^empty-jug <x>)
+   (<x> ^contents <xc>
+	^volume <xv>)
+-->
+   (<x> ^contents 0)
+   (<x> ^contents <xc> -)
+}
+
+sp {water-jug*propose*fill-water
+   (state <s> ^name water-pro
+	      ^jug <x>)
+   (<x> ^empty > 0)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name fill-water
+        ^fill-jug <x>)
+}
+
+sp {water-jug*apply*fill-water
+   (state <s> ^jug <x>
+	      ^operator <o>)
+   (<o> ^name fill-water
+	^fill-jug <x>)
+   (<x> ^contents <xc>
+	^volume <xv>)
+-->
+   (<x> ^contents <xv>
+	^contents <xc> -)
+  
+}
+
+sp {water-jug*propose*pour-water
+   (state <s> ^name water-pro
+	      ^jug <x>
+              ^jug <y> { <> <y> <x> })
+   (<x> ^contents > 0)
+   (<y> ^empty > 0)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name pour-water
+	^pour-jugx <x>
+	^pour-jugy <y>)
+}
+
+sp {water-jug*apply*pour-watery
+   (state <s> ^operator <o>)
+   (<o> ^name pour-water
+	^pour-jugx <x>
+	^pour-jugy <y>)
+   (<x> ^contents <xc>)
+   (<y> ^contents <yc>
+	^empty <ye> >= <xc>)
+-->
+   (<x> ^contents 0
+        ^contents <xc> -)
+   (<y> ^contents ( + <yc> <xc>)
+	^contents <yc> -)
+}
+
+sp {water-jug*apply*pour-water-over-jugy
+   (state <s> ^operator <o>)
+   (<o> ^name pour-water
+	^pour-jugx <x>
+	^pour-jugy <y>)
+   (<x> ^contents <xc>)
+   (<y> ^contents <yc>
+	^empty <ye> < <xc>
+	^volume <yv>)
+-->
+   (<x> ^contents ( - <xc> <ye>)
+	^contents <xc> -)
+   (<y> ^contents <yv>
+	^contents <yc> -)
+}
+
+sp {water-jug*stop-water
+   (state <s> ^name water-pro
+	^jug <x>
+	^jug <y>
+	^jug <z>)
+   (<x> ^contents 2
+	^volume 5)
+   (<y> ^contents 2
+	^volume 4)
+   (<z> ^contents 3
+        ^volume 3)
+-->
+   (write (crlf)|The stop|)
+   (halt)
+}
+
+sp {water-jug*elaborate*monitor-water
+   (state <s> ^name water-pro
+	^jug <x>
+	^jug <y>
+	^jug <z>)
+   (<x> ^contents <xc>
+	^volume 5)
+   (<y> ^contents <yc>
+	^volume 4)
+   (<z> ^contents <zc>
+	^volume 3)
+-->
+   (write (crlf)|5L jug is |<xc> (crlf)| 4L jug is |<yc> (crlf)| 3L jug is |<zc>)
+}
+
+sp {water-jug*apply*record-water
+   (state <s> ^name water-pro
+	      ^operator.name <new> 
+	     -^last-operator
+              ^jug <x> 
+	      ^jug <y> 
+	      ^jug <z>)
+   (<x> ^volume 5 
+	^contents <xc>)
+   (<y> ^volume 4 
+	^contents <yc>)
+   (<z> ^volume 3 
+	^contents <zc>)
+-->
+   (<s> ^last-operator <new>
+        ^memory-operator <memo>)
+   (<memo> ^xcontents <xc> 
+	   ^ycontents <yc> 
+	   ^zcontents <zc>)
+}
+
+sp {water-jug*apply*past-water
+   (state <s> ^name water-pro
+	      ^operator.name <new>
+	      ^jug <x>
+	      ^jug <y>
+	      ^jug <z>)
+   (<x> ^volume 5
+	^contents <xc>)
+   (<y> ^volume 4
+	^contents <yc>)
+   (<z> ^volume 3
+	^contents <zc>)
+-->
+   (<s> ^last-operator <new>
+	^memory-operator <memo>)
+   (<memo> ^xcontents <xc>
+	   ^ycontents <yc>
+	   ^zcontents <zc>)
+}
+
+sp {water-jug*apply*past-fill-water
+   (state <s> ^name water-pro
+	      ^operator <o> +
+	      ^last-operator fill-water)
+   (<o> ^name empty-water)
+-->
+   (<s> ^operator <o> < )
+}
+
+sp {water-jug*apply*past-empty-water
+   (state <s> ^name water-pro
+	      ^operator <o> +
+	      ^last-operator empty-water)
+   (<o> ^name fill-water)
+-->
+   (<s> ^operator <o> <)
+}
+
+#sp {water-jug*apply*past-operator-water
+#   (state <s> ^name water-pro
+#	      ^operator <o> +
+#	      ^last-operator <new>)
+#   (<o> ^name <new>)
+#-->
+#   (<s> ^operator <o> < )
+#}
+
+sp {water-jug*rewater
+   (state <s> ^name water-pro
+	      ^memory-operator <memo>
+	      ^operator <o> +
+	      ^jug <xnow>
+	      ^jug <ynow>
+	      ^jug <znow>)
+   (<memo> ^xcontents <xcon>
+	   ^ycontents <ycon>
+	   ^zcontents <zcon>)
+   (<xnow> ^volume 5
+	   ^contents <xcon>)
+   (<ynow> ^volume 4
+	   ^contents <ycon>)
+   (<znow> ^volume 3
+	   ^contents <zcon>)
+-->
+   (<s>  ^operator <o> <)
+}
