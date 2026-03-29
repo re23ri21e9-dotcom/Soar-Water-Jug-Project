@@ -1,240 +1,346 @@
+#water-jugの初期化ルールの提案
 sp {water-jug*propose*initialize-water
-   (state <s> ^superstate nil
-	      -^name)
+   (state <s> ^superstate nil 
+  	     -^name)#名前がないなら
 -->
    (<s> ^operator <o> +)
-   (<o> ^name my-water)
+   (<o> ^name my-water)#stateにmy-waterというオペレータの提案
 }
 
+#water-jugの初期化ルールの実行
 sp {water-jug*apply*initialize-water
-   (state <s> ^operator.name my-water)
+   (state <s> ^operator.name my-water)#選ばれたオペレータがmy-waterならば
+
 -->
-   (<s> ^name water-pro
-              ^jug <x>
-	      ^jug <y>
-	      ^jug <z>)
-   (<x> ^contents 0
-	^volume 5)
-   (<y> ^contents 0
-	^volume 4)
-   (<z> ^contents 0
-	^volume 3)
+   (<s> ^name water-pro#stateにwater-proという名前を用意
+	^jug <x> 
+	^jug <y> 
+	^jug <z>)#stateに3つのjugを用意
+   (<x> ^volume 5 
+	^contents 0)#ジャグxには容量が5で中身が0
+   (<y> ^volume 4 
+	^contents 0)#ジャグyには容量が4で中身が0
+   (<z> ^volume 3 
+	^contents 0)#ジャグzには容量が3で中身が0
 }
 
 #空き容量の計算
 sp {water-jug*elaborate*empty-cal
-   (state <s> ^name water-pro
-              ^jug <x>)
-   (<x> ^contents <xc>
-	^volume <xv>)
+   (state <s> ^name water-pro 
+	      ^jug <x>)#stateにwater-proとジャグがあるなら
+   (<x> ^contents <xc> 
+	^volume <xv>)#ジャグの中身がxc、ジャグの容量がxvなら
 -->
-   (<x> ^empty (- <xv> <xc>))
+   (<x> ^empty (- <xv> <xc>))#容量xvから中身xcを差し引いた値をempty(空き容量)とする
+
 }
+
+#中身を空にさせる提案
 sp {water-jug*propose*empty-water
-   (state <s> ^name water-pro
-	      ^jug <x>)
-   (<x> ^contents > 0)
+   (state <s> ^name water-pro 
+	      ^jug <x>)#stateにwater-proとジャグがあるなら
+   (<x> ^contents > 0)#ジャグの中身が0より大きい(水が入っている)なら
 -->
    (<s> ^operator <o> + =)
-   (<o> ^name empty-water
-        ^empty-jug <x>)
+   (<o> ^name empty-water #empty-waterというオペレータの提案
+	^empty-jug <x>)#empty-jug(jugの区別)の提案
 }
 
+#中身を空にさせるルール
 sp {water-jug*apply*empty-water
-   (state <s> ^name water-pro
-	      ^jug <x>
-	      ^operator <o>)
-   (<o> ^name empty-water
-	^empty-jug <x>)
-   (<x> ^contents <xc>
-	^volume <xv>)
+   (state <s> ^name water-pro 
+	      ^operator <o>)#stateにwater-proと選ばれたオペレータがあるなら
+   (<o> ^name empty-water 
+	^empty-jug <x>)#オペレータにempty-waterとempty-jugがあるなら
+   (<x> ^contents <xc>)#jugの中身がxcなら
 -->
-   (<x> ^contents 0)
-   (<x> ^contents <xc> -)
+   (<x> ^contents 0 
+	^contents <xc> -)#jugの中身を0にして古い情報の中身を-で削除する
 }
 
+#中身を満タンにさせる提案
 sp {water-jug*propose*fill-water
-   (state <s> ^name water-pro
-	      ^jug <x>)
-   (<x> ^empty > 0)
+   (state <s> ^name water-pro 
+	      ^jug <x>)#stateにwater-proとジャグがあるなら
+   (<x> ^contents 0)#ジャグの中身が0なら
 -->
    (<s> ^operator <o> + =)
-   (<o> ^name fill-water
-        ^fill-jug <x>)
+   (<o> ^name fill-water#fill-waterというオペレータの提案
+	^fill-jug <x>)#ジャグの提案
 }
 
+#中身を満タンにさせるルール
 sp {water-jug*apply*fill-water
-   (state <s> ^jug <x>
-	      ^operator <o>)
-   (<o> ^name fill-water
-	^fill-jug <x>)
-   (<x> ^contents <xc>
-	^volume <xv>)
+   (state <s> ^name water-pro 
+	      ^operator <o>)#stateに選ばれたオペレータがあるなら
+   (<o> ^name fill-water 
+	^fill-jug <x>)#オペレータにfill-waterとfill-jugがあるなら
+   (<x> ^contents <xc> 
+	^volume <xv>)#ジャグの中身がxc、容量がxvなら
 -->
-   (<x> ^contents <xv>
-	^contents <xc> -)
-  
+   (<x> ^contents <xv> 
+	^contents <xc> -)#ジャグの中身を満タン(xv)にさせて古い情報の中身を-で削除する
 }
 
+#ジャグの中身を移させる提案
 sp {water-jug*propose*pour-water
-   (state <s> ^name water-pro
-	      ^jug <x>
-              ^jug <y> { <> <y> <x> })
-   (<x> ^contents > 0)
-   (<y> ^empty > 0)
+   (state <s> ^name water-pro 
+	      ^jug <x> 
+	      ^jug <y> { <> <y> <x> })#stateにxとは違うジャグyがあるなら
+   (<x> ^contents > 0)#注ぐジャグxに中身があるなら
+   (<y> ^empty > 0)#注がれるジャグyに空き容量があるなら
 -->
    (<s> ^operator <o> + =)
-   (<o> ^name pour-water
-	^pour-jugx <x>
-	^pour-jugy <y>)
+   (<o> ^name pour-water#pour-waterというオペレータを提案
+	^pour-jugx <x>#pour-jugxを提案
+	^pour-jugy <y>)#pour-jugyを提案
 }
 
+#ジャグの中身を移させるルール(ジャグの中身をすべて移せる場合)
 sp {water-jug*apply*pour-watery
-   (state <s> ^operator <o>)
-   (<o> ^name pour-water
-	^pour-jugx <x>
-	^pour-jugy <y>)
-   (<x> ^contents <xc>)
-   (<y> ^contents <yc>
-	^empty <ye> >= <xc>)
+   (state <s> ^name water-pro 
+	      ^operator <o>)#stateに選ばれたオペレータがあるなら
+   (<o> ^name pour-water 
+	^pour-jugx <x> 
+	^pour-jugy <y>)#オペレータにpour-jugxとpour-jugyがあるなら
+   (<x> ^contents <xc>)#注ぐジャグの中身がxcなら
+   (<y> ^contents <yc> 
+	^empty <ye> >= <xc>)#注ぐジャグの中身が注がれるジャグの空き容量以下であれば
 -->
-   (<x> ^contents 0
-        ^contents <xc> -)
-   (<y> ^contents ( + <yc> <xc>)
-	^contents <yc> -)
+   (<x> ^contents 0 
+	^contents <xc> -)#注いでいるジャグの中身を0にして古い情報の中身を-で削除
+   (<y> ^contents (+ <yc> <xc>) 
+	^contents <yc> -)#注がれているジャグの中身は注いだ分増えて、古い情報の中身を-で削除
 }
 
+#ジャグの中身を移させるルール(ジャグの中身がすべて移せない場合)）
 sp {water-jug*apply*pour-water-over-jugy
-   (state <s> ^operator <o>)
-   (<o> ^name pour-water
-	^pour-jugx <x>
-	^pour-jugy <y>)
-   (<x> ^contents <xc>)
-   (<y> ^contents <yc>
-	^empty <ye> < <xc>
-	^volume <yv>)
+   (state <s> ^name water-pro 
+	      ^operator <o>)#stateに選ばれたオペレータがあるなら
+   (<o> ^name pour-water 
+	^pour-jugx <x> 
+	^pour-jugy <y>)#オペレータにpour-jugxとpour-jugy、とpour-waterという名前があるなら
+   (<x> ^contents <xc>)#注ぐジャグの中身がxcなら
+   (<y> ^contents <yc> 
+	^empty <ye> < <xc> 
+	^volume <yv>)#注がれているジャグの空き容量が注いでいるジャグの中身より小さいなら(あふれている場合)
 -->
-   (<x> ^contents ( - <xc> <ye>)
-	^contents <xc> -)
-   (<y> ^contents <yv>
-	^contents <yc> -)
+   (<x> ^contents (- <xc> <ye>) 
+	^contents <xc> -)#注ぐジャグの中身は注いだ分減らして、古い情報の中身を-で削除
+   (<y> ^contents <yv> 
+	^contents <yc> -)#注がれるジャグの中身は満タン(yv)にして古い情報の中身を-で削除
 }
 
+#どうやってこのプログラムを終わらせるのかのルール）
 sp {water-jug*stop-water
-   (state <s> ^name water-pro
-	^jug <x>
-	^jug <y>
-	^jug <z>)
-   (<x> ^contents 2
-	^volume 5)
-   (<y> ^contents 2
-	^volume 4)
-   (<z> ^contents 3
-        ^volume 3)
--->
-   (write (crlf)|The stop|)
-   (halt)
-}
-
-sp {water-jug*elaborate*monitor-water
-   (state <s> ^name water-pro
-	^jug <x>
-	^jug <y>
-	^jug <z>)
-   (<x> ^contents <xc>
-	^volume 5)
-   (<y> ^contents <yc>
-	^volume 4)
-   (<z> ^contents <zc>
-	^volume 3)
--->
-   (write (crlf)|5L jug is |<xc> (crlf)| 4L jug is |<yc> (crlf)| 3L jug is |<zc>)
-}
-
-sp {water-jug*apply*record-water
-   (state <s> ^name water-pro
-	      ^operator.name <new> 
-	     -^last-operator
-              ^jug <x> 
-	      ^jug <y> 
-	      ^jug <z>)
-   (<x> ^volume 5 
-	^contents <xc>)
-   (<y> ^volume 4 
-	^contents <yc>)
-   (<z> ^volume 3 
-	^contents <zc>)
--->
-   (<s> ^last-operator <new>
-        ^memory-operator <memo>)
-   (<memo> ^xcontents <xc> 
-	   ^ycontents <yc> 
-	   ^zcontents <zc>)
-}
-
-sp {water-jug*apply*past-water
-   (state <s> ^name water-pro
-	      ^operator.name <new>
+   (state <s> ^name water-pro#stateにwater-proがあるなら
 	      ^jug <x>
 	      ^jug <y>
-	      ^jug <z>)
+	      ^jug <z>)#3つのジャグxとy、zがあるなら
+   (<x> ^volume 5 
+	^contents 1)#5Lのジャグの中身が1なら
+   (<y> ^volume 4 
+	^contents 2)#4Lのジャグの中身が2なら
+   (<z> ^volume 3 
+	^contents 3)#3Lのジャグの中身が1なら
+-->
+   (write (crlf) |The stop|)#終了する時The stopと表示
+   (halt)#実行終了
+}
+
+#ジャグの中身を表示させるルール
+sp {water-jug*elaborate*monitor-water
+   (state <s> ^name water-pro#stateにwater-proがあるなら
+	      ^jug <x> 
+	      ^jug <y> 
+	      ^jug <z>)#3つのジャグxとy、zがあるなら
+   (<x> ^volume 5 
+	^contents <xc>)#5Lのジャグの中身がxcなら
+   (<y> ^volume 4 
+	^contents <yc>)#4Lのジャグの中身がycなら
+   (<z> ^volume 3 
+	^contents <zc>)#3Lのジャグの中身がzcなら
+-->
+   (write (crlf) |5L:| <xc> | 4L:| <yc> | 3L:| <zc>)#ジャグの中身を表示
+}
+
+# --- 1から12まではそのまま ---
+#初めての操作を記憶
+sp {water-jug*apply*record-operator
+   (state <s> ^name water-pro#stateにwater-proがあるなら
+              ^operator.name <new>#操作中のオペレータの名前を<new>に
+	     -^last-operator)#前回した操作がないなら
+-->
+   (<s> ^last-operator <new>)}#stateに最後の操作<new>を記憶
+
+#過去のオペレーターを最新のオペレーターに更新
+sp {water-jug*apply*updata-record-operator
+   (state <s> ^name water-pro
+	      ^operator.name <new>)#今操作しているオペレーターを<new>に
+   (<s> ^last-operator <old>)#過去の操作を<old>に
+-->
+   (<s> ^last-operator <new>#今操作しているオペレーターを<new>にして
+	^last-operator <old> -)#前回した操作を削除する
+}
+
+#---fillからemptyの禁止---
+
+#fillしたらemptyしないように
+sp {water-jug*apply*empty*fill*worst
+   (state <s> ^name water-pro
+              ^operator <o>)#stateに選ばれたオペレーターがあるなら
+   (<o> ^name fill-water#今回fillしようとしている
+	^fill-jug <x>)
+-->
+   (<s> ^last-fill-jug <x>)#stateにlast-fill-jugの追加(同じジャグの禁止)
+}
+
+
+
+sp {water-jug*select*avoid-reverse-fill
+   (state <s> ^name water-pro
+              ^last-operator fill-water
+              ^last-fill-jug <x>
+              ^operator <o> +)#stateに選ばれたオペレーターと前回のfillしたジャグがあるなら
+   (<o> ^name empty-water
+        ^empty-jug <x>)#今回emptyしようとするなら  
+-->
+   (<s> ^operator <o> -)}#優先度を下げる
+
+sp {water-jug*apply*update-fill-jug
+   (state <s> ^name water-pro 
+	      ^operator <o> 
+	      ^last-fill-jug <oldx>)#stateに選ばれたオペレーターと前回のfillしたジャグがあるなら
+   (<o> ^name fill-water 
+	^fill-jug <x>)#今回fillしようとする
+-->
+   (<s> ^last-fill-jug <oldx> -)#前回のfillしたジャグを削除する
+}
+
+#---emptyからfillの禁止---
+
+sp {water-jug*apply*fill*empty*worst
+   (state <s> ^name water-pro
+              ^operator <o>)#stateに選ばれたオペレーターがあるなら
+   (<o> ^name empty-water#今回emptyしようとしている
+	^empty-jug <x>)
+-->
+   (<s> ^last-empty-jug <x>)#stateにlast-empty-jugの追加(同じジャグの禁止)
+}
+
+
+
+sp {water-jug*select*avoid-reverse-empty
+   (state <s> ^name water-pro
+              ^last-operator empty-water
+              ^last-empty-jug <x>
+              ^operator <o> +)#stateに選ばれたオペレーターと前回のemptyしたジャグがあるなら
+   (<o> ^name fill-water
+        ^fill-jug <x>)#今回fillしようとしている
+-->
+   (<s> ^operator <o> -)}#優先度を下げる
+
+sp {water-jug*apply*update-empty-jug
+   (state <s> ^name water-pro 
+	      ^operator <o> 
+	      ^last-empty-jug <oldx>)#stateに選ばれたオペレーターと前回のemptyしたジャグがあるなら
+   (<o> ^name empty-water 
+	^empty-jug <x>)#今回emptyしようとしている
+-->
+   (<s> ^last-empty-jug <oldx> -)#前回のemptyしたジャグを削除する
+}
+
+#---pour禁止ルール---
+
+sp {water-jug*apply*record-pour-details*first
+   (state <s> ^name water-pro
+              ^operator <o>
+	     -^last-pour-jugx
+	     -^last-pour-jugy)#stateに選ばれたオペレータがあり、前回pourしていないなら
+   (<o> ^name pour-water
+        ^pour-jugx <x>
+        ^pour-jugy <y>)#今回pourしようとしている
+-->
+    (<s> ^last-pour-jugx <x>
+         ^last-pour-jugy <y>)#stateにlast-pour-jugの追加(同じジャグの禁止)
+}
+
+
+sp {water-jug*apply*record-pour-details
+   (state <s> ^name water-pro
+              ^operator <o>)#stateに選ばれたオペレーターがあるなら
+   (<o> ^name pour-water
+        ^pour-jugx <x>
+        ^pour-jugy <y>)#今回pourしようとするなら
+   (<s> ^last-pour-jugx <oldx>
+        ^last-pour-jugy <oldy>)#前回のpourしたジャグがあるなら
+-->
+   (<s> ^last-pour-jugx <x>
+        ^last-pour-jugx <oldx> -#前回のpourしたジャグの削除
+        ^last-pour-jugy <y>
+        ^last-pour-jugy <oldy> -  )#前回のpourしたジャグの削除
+}
+
+
+sp {water-jug*select*avoid-reverse-pour
+   (state <s> ^name water-pro
+              ^last-operator pour-water
+              ^last-pour-jugx <x>
+              ^last-pour-jugy <y>
+              ^operator <o> +)#stateに選ばれたオペレーターと前回pourしたジャグがあるなら
+   (<o> ^name pour-water
+        ^pour-jugx <y>   
+        ^pour-jugy <x>)#今回pourしようとしてる
+-->
+   (<s> ^operator <o> -)}#優先度を下げる
+
+#---emptyの連続を禁止---
+
+sp {water-jug*select*avoid-repeated-empty
+   (state <s> ^name water-pro
+              ^operator <o> +
+              ^last-operator empty-water)#stateに選ばれたオペレータと前回emptyしたなら
+   (<o> ^name empty-water)#今回emptyしようとするなら
+-->
+   (<s> ^operator <o> -)#優先度を下げる
+}
+
+#---来た道の優先度を下げる---
+
+sp {water-jug*apply*avoid-visit
+   (state <s> ^name water-pro
+	      ^jug <x>
+	      ^jug <y>
+	      ^jug <z>)#stateにジャグが３つあるなら
    (<x> ^volume 5
-	^contents <xc>)
+        ^contents <xc>)#5Lのジャグの中身がxcなら
    (<y> ^volume 4
-	^contents <yc>)
+	^contents <yc>)#4Lのジャグの中身がycなら
    (<z> ^volume 3
-	^contents <zc>)
+	^contents <zc>)#3Lのジャグの中身がzcなら
 -->
-   (<s> ^last-operator <new>
-	^memory-operator <memo>)
-   (<memo> ^xcontents <xc>
-	   ^ycontents <yc>
-	   ^zcontents <zc>)
+   (<s> ^last-visit <visit>)
+   (<visit> ^visited-contentsx <xc>
+	    ^visited-contentsy <yc>
+	    ^visited-contentsz <zc>)#訪れた中身として記憶しておく
 }
 
-sp {water-jug*apply*past-fill-water
+sp {water-jug*select*avoid-visit
    (state <s> ^name water-pro
+	      ^last-visit <visit>
 	      ^operator <o> +
-	      ^last-operator fill-water)
-   (<o> ^name empty-water)
+	      ^jug <x>
+	      ^jug <y>
+	      ^jug <z>)#stateに選ばれたオペレータと3つのジャグがあるなら
+   (<visit> ^visited-contentsx <last-xc>
+	    ^visited-contentsy <last-yc>
+	    ^visited-contentsz <last-zc>)#訪れているなら
+   (<x> ^volume 5
+	^contents <last-xc>)#5Lのジャグの中身が訪れたところなら
+   (<y> ^volume 4
+	^contents <last-yc>)#4Lのジャグの中身が訪れたところなら
+   (<z> ^volume 3
+	^contents <last-zc>)#3Lのジャグの中身が訪れたところなら
 -->
-   (<s> ^operator <o> < )
-}
-
-sp {water-jug*apply*past-empty-water
-   (state <s> ^name water-pro
-	      ^operator <o> +
-	      ^last-operator empty-water)
-   (<o> ^name fill-water)
--->
-   (<s> ^operator <o> <)
-}
-
-#sp {water-jug*apply*past-operator-water
-#   (state <s> ^name water-pro
-#	      ^operator <o> +
-#	      ^last-operator <new>)
-#   (<o> ^name <new>)
-#-->
-#   (<s> ^operator <o> < )
-#}
-
-sp {water-jug*rewater
-   (state <s> ^name water-pro
-	      ^memory-operator <memo>
-	      ^operator <o> +
-	      ^jug <xnow>
-	      ^jug <ynow>
-	      ^jug <znow>)
-   (<memo> ^xcontents <xcon>
-	   ^ycontents <ycon>
-	   ^zcontents <zcon>)
-   (<xnow> ^volume 5
-	   ^contents <xcon>)
-   (<ynow> ^volume 4
-	   ^contents <ycon>)
-   (<znow> ^volume 3
-	   ^contents <zcon>)
--->
-   (<s>  ^operator <o> <)
+   (<s> ^operator <o> <)#優先度を下げる
 }
